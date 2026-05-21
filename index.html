@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Galera da Copa</title>
+    <title>Galera da Copa - Gerador de Piadas</title>
     <style>
         * {
             margin: 0;
@@ -18,6 +18,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 20px;
         }
 
         .container {
@@ -27,18 +28,13 @@
             background: rgba(0, 0, 0, 0.2);
             border-radius: 10px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
         }
 
         h1 {
             font-size: 3em;
             margin-bottom: 20px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-        }
-
-        p {
-            font-size: 1.2em;
-            margin-bottom: 30px;
-            opacity: 0.9;
         }
 
         .ball {
@@ -60,6 +56,33 @@
             }
         }
 
+        .joke-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 10px;
+            margin: 30px 0;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .joke-text {
+            font-size: 1.3em;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .joke-category {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
         .button {
             display: inline-block;
             padding: 12px 30px;
@@ -69,7 +92,7 @@
             text-decoration: none;
             border-radius: 5px;
             font-weight: bold;
-            transition: background-color 0.3s;
+            transition: all 0.3s;
             border: none;
             cursor: pointer;
             font-size: 1em;
@@ -77,17 +100,194 @@
 
         .button:hover {
             background-color: #ff8c00;
+            transform: scale(1.05);
+        }
+
+        .button:active {
+            transform: scale(0.95);
+        }
+
+        .button.secondary {
+            background-color: #0066cc;
+        }
+
+        .button.secondary:hover {
+            background-color: #0052a3;
+        }
+
+        .loading {
+            display: none;
+            font-size: 1.2em;
+            opacity: 0.8;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error {
+            color: #ff6b6b;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .buttons-group {
+            margin-top: 20px;
+        }
+
+        p {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            opacity: 0.9;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>⚽ Galera da Copa ⚽</h1>
+        <h1>😂 Galera da Copa 😂</h1>
         <div class="ball"></div>
-        <p>Bem-vindo à sua primeira aplicação!</p>
-        <p>Aqui é o lugar perfeito para sua galera se reunir e aproveitar a diversão do futebol.</p>
-        <button class="button">Começar</button>
-        <button class="button">Sobre</button>
+        <p>Gerador de Piadas para você rir com a galera!</p>
+
+        <div class="joke-container">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                Carregando piada...
+            </div>
+            <div id="jokeContent" style="display: none;">
+                <div class="joke-text" id="jokeText"></div>
+                <div class="joke-category" id="jokeCategory"></div>
+            </div>
+            <div id="placeholderText" style="opacity: 0.6;">
+                Clique no botão abaixo para carregar uma piada aleatória! 🎉
+            </div>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="buttons-group">
+            <button class="button" onclick="getJoke()">Nova Piada 😄</button>
+            <button class="button secondary" onclick="getJokeByCategory()">Piada Aleatória 🎲</button>
+        </div>
     </div>
+
+    <script>
+        // API: JokeAPI (https://jokeapi.dev)
+        const API_URL = 'https://v2.jokeapi.dev/joke/Any';
+
+        async function getJoke() {
+            const jokeContainer = document.getElementById('jokeContent');
+            const placeholderText = document.getElementById('placeholderText');
+            const loading = document.getElementById('loading');
+            const errorDiv = document.getElementById('error');
+            
+            // Reset error message
+            errorDiv.textContent = '';
+            
+            // Show loading, hide placeholder
+            loading.style.display = 'block';
+            placeholderText.style.display = 'none';
+            jokeContainer.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_URL}?format=json`);
+                
+                if (!response.ok) {
+                    throw new Error('Erro ao buscar a piada');
+                }
+
+                const data = await response.json();
+
+                // Hide loading
+                loading.style.display = 'none';
+
+                if (data.type === 'single') {
+                    // Single joke
+                    document.getElementById('jokeText').textContent = data.joke;
+                    document.getElementById('jokeCategory').textContent = `Categoria: ${data.category}`;
+                } else if (data.type === 'twopart') {
+                    // Two-part joke
+                    document.getElementById('jokeText').textContent = `${data.setup}\n\n${data.delivery}`;
+                    document.getElementById('jokeCategory').textContent = `Categoria: ${data.category}`;
+                }
+
+                // Show joke
+                jokeContainer.style.display = 'flex';
+
+            } catch (error) {
+                loading.style.display = 'none';
+                placeholderText.style.display = 'block';
+                errorDiv.textContent = '❌ ' + error.message + '. Tente novamente!';
+                console.error('Error:', error);
+            }
+        }
+
+        async function getJokeByCategory() {
+            const categories = ['Programming', 'Knock-Knock', 'General', 'Christmas'];
+            const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+            
+            const jokeContainer = document.getElementById('jokeContent');
+            const placeholderText = document.getElementById('placeholderText');
+            const loading = document.getElementById('loading');
+            const errorDiv = document.getElementById('error');
+            
+            // Reset error message
+            errorDiv.textContent = '';
+            
+            // Show loading, hide placeholder
+            loading.style.display = 'block';
+            placeholderText.style.display = 'none';
+            jokeContainer.style.display = 'none';
+
+            try {
+                const response = await fetch(`https://v2.jokeapi.dev/joke/${randomCategory}?format=json`);
+                
+                if (!response.ok) {
+                    throw new Error('Erro ao buscar a piada');
+                }
+
+                const data = await response.json();
+
+                // Hide loading
+                loading.style.display = 'none';
+
+                if (data.type === 'single') {
+                    // Single joke
+                    document.getElementById('jokeText').textContent = data.joke;
+                    document.getElementById('jokeCategory').textContent = `Categoria: ${data.category}`;
+                } else if (data.type === 'twopart') {
+                    // Two-part joke
+                    document.getElementById('jokeText').textContent = `${data.setup}\n\n${data.delivery}`;
+                    document.getElementById('jokeCategory').textContent = `Categoria: ${data.category}`;
+                }
+
+                // Show joke
+                jokeContainer.style.display = 'flex';
+
+            } catch (error) {
+                loading.style.display = 'none';
+                placeholderText.style.display = 'block';
+                errorDiv.textContent = '❌ ' + error.message + '. Tente novamente!';
+                console.error('Error:', error);
+            }
+        }
+
+        // Load a joke when page loads
+        window.addEventListener('load', function() {
+            getJoke();
+        });
+    </script>
 </body>
 </html>
